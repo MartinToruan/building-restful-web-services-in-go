@@ -5,7 +5,6 @@ import (
 	"github.com/MartinToruan/building-restful-web-services-in-go/ch04/5_metro_rail_api_using_gin_framework/dbutils"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
-	"gopkg.in/gin-gonic/gin.v1/json"
 	"log"
 	"net/http"
 )
@@ -63,8 +62,7 @@ func GetStation(c *gin.Context) {
 
 func CreateStation(c *gin.Context){
 	var station StationPersistence
-	decoder := json.NewDecoder(c.Request.Body)
-	if err := decoder.Decode(&station); err != nil{
+	if err := c.BindJSON(&station); err != nil{
 		log.Fatalf("error while decode: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
