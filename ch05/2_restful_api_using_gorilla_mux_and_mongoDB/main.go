@@ -36,7 +36,7 @@ func (db *DB) GetMovie(w http.ResponseWriter, r *http.Request){
 	// Get data From database
 	var movie Movie
 	if err := db.collection.Find(bson.M{"_id": bson.ObjectIdHex(vars["id"])}).One(&movie); err != nil{
-		w.Header().Set("Content-Type", "text/plain")
+		w.Header().Set("Content-Type", "text")
 		w.WriteHeader(http.StatusNotFound)
 		_, _ = w.Write([]byte("Data Not Found"))
 	} else{
@@ -99,6 +99,21 @@ func (db *DB) UpdateMovie(w http.ResponseWriter, r *http.Request){
 	}
 }
 
+func (db *DB) DeleteMovie(w http.ResponseWriter, r *http.Request){
+	vars := mux.Vars(r)
+
+	// Delete Data
+	if err := db.collection.Remove(bson.M{"_id": bson.ObjectIdHex(vars["id"])}); err != nil{
+		log.Fatalf("error while delete data: %v\n", err)
+		w.Header().Set("Content-Type", "plain/text")
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte("Data Not found!"))
+	} else{
+		w.Header().Set("Content-Type", "text")
+		_, _ = w.Write([]byte("Delete Succsfull!"))
+	}
+}
+
 func main(){
 	// Prepare Connection to MongoDB
 	s, err := mgo.Dial("127.0.0.1")
@@ -117,6 +132,7 @@ func main(){
 	r.HandleFunc("/v1/movies/{id:[a-zA-Z0-9]*}", db.GetMovie).Methods("GET")
 	r.HandleFunc("/v1/movies/", db.PostMovie).Methods("POST")
 	r.HandleFunc("/v1/movies/{id:[a-zA-Z0-9]*}", db.UpdateMovie).Methods("PUT")
+	r.HandleFunc("/v1/movies/{id:[a-zA-Z0-9]*}", db.DeleteMovie).Methods("DELETE")
 
 	// Prepare Server
 	srv := http.Server{
