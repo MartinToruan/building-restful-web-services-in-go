@@ -76,6 +76,29 @@ func (db *DB) PostMovie(w http.ResponseWriter, r *http.Request){
 	}
 }
 
+func (db *DB) UpdateMovie(w http.ResponseWriter, r *http.Request){
+	var movie Movie
+
+	// Get Path parameter
+	vars := mux.Vars(r)
+
+	// Get Updated Movie
+	if err := json.NewDecoder(r.Body).Decode(&movie); err != nil{
+		log.Fatalf("error while decode data: %v\n", err)
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+	}
+
+	// Update data in Database
+	if err := db.collection.Update(bson.M{"_id": bson.ObjectIdHex(vars["id"])}, bson.M{"$set": movie}); err != nil{
+		log.Fatalf("error while update data in database: %v\n", err)
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+	}
+}
+
 func main(){
 	// Prepare Connection to MongoDB
 	s, err := mgo.Dial("127.0.0.1")
@@ -93,6 +116,7 @@ func main(){
 
 	r.HandleFunc("/v1/movies/{id:[a-zA-Z0-9]*}", db.GetMovie).Methods("GET")
 	r.HandleFunc("/v1/movies/", db.PostMovie).Methods("POST")
+	r.HandleFunc("/v1/movies/{id:[a-zA-Z0-9]*}", db.UpdateMovie).Methods("PUT")
 
 	// Prepare Server
 	srv := http.Server{
